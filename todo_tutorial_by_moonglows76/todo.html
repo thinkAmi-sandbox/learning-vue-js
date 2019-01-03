@@ -8,6 +8,35 @@
     <!-- 取り消し線を表示するスタイル -->
     <style>
         .done { text-decoration: line-through; }
+
+        /* ToDoリストをアニメーションするためのスタイル */
+        .list-complete-item {
+            /* transform: 与えられた要素を回転などする
+            all: プロパティ全部を変化させる
+            1s: 変化に書ける時間(1sは、1秒)
+            https://www.halawata.net/2011/10/css3-transition/
+            */
+            transition: all 1s;
+        }
+
+        /* Vue.jsは、transition-group要素のname属性を接頭辞として、クラス名を作り出す */
+        .list-complete-enter, .list-complete-leave-to
+            /* .list-complete-leave-active for below version 2.1.8 */ {
+            /* 非表示の状態の見た目を、opacityで指定
+            opacity: 透明度を指定 (0ならば、完全に透明)
+            https://developer.mozilla.org/ja/docs/Web/CSS/opacity
+            */
+            opacity: 0;
+            /* translateX: 要素を水平方向に移動する */
+            transform: translateX(30px);
+        }
+        /* -activeが付いているクラスは、アニメーションが動作している間ずっと要素に付加されるクラス */
+        .list-complete-leave-active {
+            /* アニメーションする要素は、デフォルトの position: static; のレイアウト状態から外す
+            https://developer.mozilla.org/ja/docs/Web/CSS/position
+            */
+            position: absolute;
+        }
     </style>
 </head>
 <body>
@@ -17,14 +46,19 @@
         <input type="text" placeholder="TODOをどうぞ" v-model="newItemTitle" v-on:keyup.enter="addTodo(newItemTitle)">
     </p>
 
-    <ul>
-        <li v-for="item in items">
+    <!-- transition-group を使って、リストに追加/削除するアニメーションを追加する
+    name属性：クラス名の接頭辞
+    tag属性：transition-groupが差し替えるタグ (今回の場合はul、今までのulタグは削除して良い)
+    -->
+    <transition-group name="list-complete" tag="ul">
+        <!-- 要素を一意に指定できるよう、v-bind:keyを使う -->
+        <li v-for="item in items" v-bind:key="item" class="list-complete-item">
             <!-- label要素を追加して、チェック済のものは打ち消し線を表示する -->
             <label v-bind:class="{ done: item.isChecked }">
                 <input type="checkbox" v-model="item.isChecked"> {{ item.title }}
             </label>
         </li>
-    </ul>
+    </transition-group>
 
     <button v-on:click="deleteTodo()">チェック済の項目を削除</button>
 </div>
