@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ToDo list</title>
+    <!-- 補完をきかせるために、ローカルに置いておく -->
+    <script src="../vue/vue_2_5_21.js"></script>
+    <!-- 取り消し線を表示するスタイル -->
+    <style>
+        .done { text-decoration: line-through; }
+    </style>
+</head>
+<body>
+<div id="app">
+    <p>
+        <!-- データバインドするModelはnewItemTitle、keyup.enterイベントを拾って起動する -->
+        <input type="text" placeholder="TODOをどうぞ" v-model="newItemTitle" v-on:keyup.enter="addTodo(newItemTitle)">
+    </p>
+
+    <ul>
+        <li v-for="item in items">
+            <!-- label要素を追加して、チェック済のものは打ち消し線を表示する -->
+            <label v-bind:class="{ done: item.isChecked }">
+                <input type="checkbox" v-model="item.isChecked"> {{ item.title }}
+            </label>
+        </li>
+    </ul>
+
+    <button v-on:click="deleteTodo()">チェック済の項目を削除</button>
+</div>
+<script src="todo.js"></script>
+</body>
+</html>
