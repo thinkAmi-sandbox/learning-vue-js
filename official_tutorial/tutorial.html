@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <!-- 補完をきかせるために、ローカルに置いておく -->
+    <script src="../vue/vue_2_5_21.js"></script>
+
+</head>
+<body>
+    <div id="app">
+        <!-- {{}} で、対応するオブジェクトの message プロパティの値に変換される -->
+        <!-- データをHTMLではなく、プレーンなテキストとして扱う -->
+        {{message}}
+
+        <!-- JavaScript式もサポートする -->
+        {{ 'foo' + 'bar' }}
+        <!-- JavaScript文はサポートしないため、エラーが出る：Error compiling template -->
+        <!--{{ let a = 1 }}-->
+    </div>
+
+    <!-- マウスオーバーしてしばらく待つと、日付が表示される -->
+    <div id="app-2">
+        <!-- この要素のtitle属性をVueインスタンスのmessage2プロパティによって更新 -->
+        <!-- div id="app"と参照名が同じだが、div idが異なるため、正しくバインドされる -->
+        <!-- 属性にバインドするためには、v-bindディレクティブを使う -->
+        <span v-bind:title="message">
+        Hover your mouse over me for a few seconds
+        to see my dynamically bound title!
+        </span>
+
+        <!-- disabled属性にバインドした場合、falseが返ってくると、HTMLからdisabled属性がなくなる -->
+        <p><button v-bind:disabled="button_disabled">Disabled Button</button></p>
+        <p><button v-bind:disabled="button_enabled">Enabled Button</button></p>
+    </div>
+
+    <!-- seen の値により、表示/非表示を切り替える -->
+    <div id="app-3">
+        <!--
+        Attribute v-if is not allowed here と表示されるのは、PyCharmのVue.jsプラグインでは、.vueファイルしか許可されていないため
+        https://intellij-support.jetbrains.com/hc/en-us/community/posts/360000084779-Vue-Attribute-is-not-allowed-here
+        -->
+
+        <!-- "v-"は、ディレクティブと呼ばれる特別な属性、単一のJavaScript式が得られることを期待する(v-forは除く) -->
+        <span v-if="seen">Now you see me</span>
+    </div>
+
+    <!-- for ループでの表示 -->
+    <div id="app-4">
+        <ol>
+            <li v-for="todo in todos">
+                {{ todo.text }}
+            </li>
+        </ol>
+    </div>
+
+    <!-- ユーザの操作(クリック)で、画面の表示を変える -->
+    <div id="app-5">
+        <p>{{ message }}</p>
+        <!-- クリックした時に、vue.jsのmethodにあるreverseMessageが呼ばれる(メソッドイベントハンドラ) -->
+        <!-- v-onディレクティブは、DOMイベントを受け取る -->
+        <button v-on:click="reverseMessage">Reverse Message</button>
+    </div>
+
+    <!-- ユーザの入力に合わせ、画面表示も変更する(v-model) -->
+    <div id="app-6">
+        <p>{{ message }}</p>
+        <input v-model="message">
+    </div>
+
+    <div id="app-7">
+        <ol>
+            <!-- groceryList をループして、todoとして渡し、keyをitem.idとして設定する -->
+            <todo-item
+                    v-for="item in groceries"
+                    v-bind:todo="item"
+                    v-bind:key="item.id"
+            ></todo-item>
+        </ol>
+    </div>
+
+    <!-- 修飾子(Modifier)
+    ドットで表現し、ディレクティブが特別な方法で束縛される
+
+    <form v-on:submit.prevent="onSubmit"> ... </form>
+
+    の場合、イベントがトリガされた時に event.preventDefault() を呼ぶように伝える
+    -->
+
+    <!-- classは、普通の定義とVueでの定義が共存できる
+    以下の場合、isActive=trueならば、<div id="app-8" class="static active"> と表示される
+    -->
+    <div id="app-8" class="static" v-bind:class="{active: isActive}">
+        foo
+    </div>
+    <!-- 算出プロパティを使うことも可能：同じく<div id="app-9" class="static active"> と表示される -->
+    <div id="app-9" class="static" v-bind:class="classObject">
+        bar
+    </div>
+
+    <!-- style属性も同様で、CSSのように扱える：styleをオブジェクトとして用意すると良い
+    v-bind:styleは、複数のオブジェクトを渡すこともできる
+    -->
+    <div id="app-10" v-bind:style="[colorObject, fontObject]">
+        baz
+    </div>
+
+    <!-- v-forでindexを取得する -->
+    <ul id="app-11">
+        <!-- 2つ目の引数を用意すると、ループのindexを取得できる -->
+        <li v-for="(item, index) in items">
+            <!-- itemsと同じスコープにある parentMessage を取得できる -->
+            {{ parentMessage }} - {{ index }} - {{ item.message }}
+        </li>
+    </ul>
+
+    <!-- オブジェクトのv-forで、オブジェクトのプロパティ値、キー、インデックスを順に取得可能 -->
+    <!-- ただし、ループの順番はJavaScriptエンジンの実装で一貫性が保証されていない -->
+    <ul id="app-12">
+        <li v-for="value, key, index in object">
+            {{ index }}. {{ key }}: {{ value }}
+        </li>
+    </ul>
+
+    <div id="app-13">
+        <button-counter></button-counter>
+    </div>
+
+
+
+    <!-- 以降、Vue.jsの実装 -->
+
+
+    <!-- appタグの後ろにscriptタグを置かないとエラー：[Vue warn]: Cannot find element: #app -->
+    <script>
+        // Vue()関数で、新しいVueインスタンスを生成する
+        // Vueインスタンス名は、慣例で `vm` (ViewModel) を使うことが多い
+        let vm = new Vue({
+            el: '#app',
+            data: {
+                message: 'Hello Vue!'
+            }
+        });
+
+        let vm2 = new Vue({
+            el: '#app-2',
+            data: {
+                message: `You loaded this page on ${new Date().toLocaleDateString()}`,
+                button_disabled: true,
+                button_enabled: false
+            }
+        });
+
+        let vm3 = new Vue({
+            el: "#app-3",
+            data: {
+                seen: true
+            }
+        });
+
+        let vm4 = new Vue({
+            el: '#app-4',
+            data: {
+                todos: [
+                    { text: 'Learn JavaScript' },
+                    { text: 'Learn Vue' },
+                    { text: 'Build something awesome' }
+                ]
+            }
+        });
+
+        let vm5 = new Vue({
+            el: '#app-5',
+            data: {
+                message: 'Hello Vue.js!'
+            },
+            // メソッド：算出プロパティと異なり、キャッシュされない
+            // 再描画が行われると、常に関数を実行する
+            // 算出プロパティを使いたい場合は、 computed: {} で定義する
+            methods: {
+                // インスタンスプロパティやコールバックでは、アロー関数は使わない
+                // 親コンテキストに束縛されるため、 `this` が期待通りにVueインスタンスとならないため
+                // https://vuejs.org/v2/guide/instance.html#Instance-Lifecycle-Hooks
+                //
+                reverseMessage: function () {
+                    // ここのthisは、vm5インスタンスを指す
+                    this.message = this.message.split('').reverse().join('')
+                }
+            }
+        });
+
+        let vm6 = new Vue({
+            el: '#app-6',
+            data: {
+                // ここでは初期値を設定
+                message: 'Hello world'
+            }
+        });
+
+        // todo-itemというcomponentを追加し、HTMLで <todo-item> というタグを使えるようにする
+        Vue.component('todo-item', {
+            // コンポーネントにデータを渡せるようにするため、 props[] を定義
+            props: ['todo'],
+            // todoにはtext属性を用意する必要がある
+            template: '<li>{{ todo.text }}</li>'
+        });
+
+        let vm7 = new Vue({
+            el: '#app-7',
+            data: {
+                // HTMLでv-forする名称で用意：元々のgroceryListでなくても動作
+                groceries: [
+                    // idは、v-bind:keyする時に使うために定義
+                    // textは、Vue.componentで使うために定義
+                    { id: 0, text: 'Vegetables' },
+                    { id: 1, text: 'Cheese' },
+                    { id: 2, text: 'Whatever else humans are supposed to eat' }
+                ]
+            }
+        });
+
+        let vm8 = new Vue({
+            el: '#app-8',
+            data : {
+                isActive: true
+            }
+        });
+
+        let vm9 = new Vue({
+            el: '#app-9',
+            data : {
+                isActive: true
+            },
+            computed: {
+                classObject: function () {
+                    return {
+                        active: this.isActive
+                    }
+                }
+            }
+        });
+
+        let vm10 = new Vue({
+            el: '#app-10',
+            data : {
+                colorObject: {
+                    color: 'red'
+                },
+                fontObject: {
+                    fontSize: '20px'
+                }
+            }
+        });
+
+        let vm11 = new Vue({
+            el: '#app-11',
+            data : {
+                parentMessage: 'Parent',
+                items: [
+                { message: 'Foo' },
+                { message: 'Bar' }
+            ]}
+        });
+
+        // インスタンスを利用しない場合、変数を用意しなくても良い
+        let vm12 = new Vue({
+            el: '#app-12',
+            data: {
+                object: {
+                    firstName: 'John',
+                    lastName: 'Doe',
+                    age: 30
+                }
+            }
+        });
+
+        // グローバルにコンポーネントを追加(ローカルでコンポーネントを追加することも可能)
+        Vue.component('button-counter', {
+            // コンポーネントでは、dataは関数として定義
+            // 各インスタンスが返されるデータオブジェクトの独立したコピーを保持できるため
+            data: function () {
+                return {
+                    count: 0
+                }
+            },
+            template: '<button v-on:click="count++">You clicked me {{ count }} times.</button>'
+        });
+
+        // コンポーネントを利用する(id=app-13のHTMLでコンポーネントを使っている)
+        new Vue({ el: '#app-13' });
+    </script>
+</body>
+</html>
